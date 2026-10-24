@@ -7,6 +7,7 @@ export interface DashboardEvent {
   status: string;
   category: string;
   artwork: string;
+  timezone: string;
   nextStart: Date | null;
   capacity: number;
   sold: number;
@@ -51,6 +52,7 @@ export async function organizerDashboard(organizerId: string) {
       status: event.status,
       category: event.category,
       artwork: event.artwork,
+      timezone: event.timezone,
       nextStart: next?.startsAt ?? null,
       capacity,
       sold,
