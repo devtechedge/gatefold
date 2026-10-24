@@ -206,7 +206,7 @@ async function main() {
     ],
   });
 
-  const rooftopRoom = await makeEvent({
+  await makeEvent({
     title: "Rooftop Listening Room",
     slug: "rooftop-listening-room",
     description:
