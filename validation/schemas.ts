@@ -135,6 +135,7 @@ export const verifySchema = z.object({
   payload: z.string().trim().min(1, "Enter or scan a ticket code.").max(400),
   eventId: z.string().trim().min(1).optional(),
   gateLabel: z.string().trim().max(80).default(""),
+  method: z.enum(["SCAN", "MANUAL"]).default("SCAN"),
 });
 
 export const inviteSchema = z.object({
