@@ -1,4 +1,3 @@
-import type { Event } from "../generated/client/client";
 import { prisma } from "@/lib/db";
 
 export interface CatalogueFilters {
@@ -62,7 +61,7 @@ export async function catalogue(filters: CatalogueFilters): Promise<{
       AND (${filters.q} = '' OR e.title ILIKE ${pattern} OR e.description ILIKE ${pattern} OR org.name ILIKE ${pattern})
       AND (${filters.category} = '' OR e.category = ${filters.category})
       AND (${from}::timestamptz IS NULL OR o."startsAt" >= ${from})
-      AND (${to}::timestamptz IS NULL OR o."startsAt" <= ${to})
+      AND (${to}::timestamptz IS NULL OR o."startsAt" < (${to}::timestamptz + interval '1 day'))
     GROUP BY e.id, org.name, v.name, v.address
     HAVING (${filters.availability} = 'ALL' OR SUM(GREATEST(ti.capacity - ti.held - ti.sold, 0)) > 0)
        AND (
@@ -97,7 +96,7 @@ export async function findBySlug(slug: string) {
   });
 }
 
-export async function organizerEvents(organizerId: string): Promise<Event[]> {
+export async function organizerEvents(organizerId: string) {
   return prisma.event.findMany({
     where: { organizerId },
     orderBy: [{ createdAt: "desc" }],
