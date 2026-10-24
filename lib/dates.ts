@@ -16,32 +16,36 @@ export function validTimeZone(timeZone: string): boolean {
   }
 }
 
-export function formatDate(date: Date, timeZone: string): string {
-  return formatInTimeZone(date, timeZone, "EEE d MMM yyyy");
+function asDate(value: Date | string): Date {
+  return value instanceof Date ? value : new Date(value);
 }
 
-export function formatShortDate(date: Date, timeZone: string): string {
-  return formatInTimeZone(date, timeZone, "d MMM");
+export function formatDate(date: Date | string, timeZone: string): string {
+  return formatInTimeZone(asDate(date), timeZone, "EEE d MMM yyyy");
 }
 
-export function formatTime(date: Date, timeZone: string): string {
-  return formatInTimeZone(date, timeZone, "h:mm a");
+export function formatShortDate(date: Date | string, timeZone: string): string {
+  return formatInTimeZone(asDate(date), timeZone, "d MMM");
 }
 
-export function formatDateTime(date: Date, timeZone: string): string {
-  return formatInTimeZone(date, timeZone, "d MMM yyyy, h:mm a");
+export function formatTime(date: Date | string, timeZone: string): string {
+  return formatInTimeZone(asDate(date), timeZone, "h:mm a");
 }
 
-export function formatDateTimeWithZone(date: Date, timeZone: string): string {
+export function formatDateTime(date: Date | string, timeZone: string): string {
+  return formatInTimeZone(asDate(date), timeZone, "d MMM yyyy, h:mm a");
+}
+
+export function formatDateTimeWithZone(date: Date | string, timeZone: string): string {
   return `${formatInTimeZone(date, timeZone, "d MMM yyyy, h:mm a")} (${timeZone.replace("_", " ")})`;
 }
 
-export function formatTimeRange(start: Date, end: Date, timeZone: string): string {
+export function formatTimeRange(start: Date | string, end: Date | string, timeZone: string): string {
   return `${formatTime(start, timeZone)} - ${formatTime(end, timeZone)}`;
 }
 
 export function toDateTimeLocal(date: Date, timeZone: string): string {
-  return formatInTimeZone(date, timeZone, "yyyy-MM-dd'T'HH:mm");
+  return formatInTimeZone(asDate(date), timeZone, "yyyy-MM-dd'T'HH:mm");
 }
 
 export function formatMoney(minor: number, currency = "USD"): string {
@@ -52,14 +56,21 @@ export function formatMoney(minor: number, currency = "USD"): string {
   }).format(minor / 100);
 }
 
-export function formatMonth(date: Date, timeZone: string): string {
-  return formatInTimeZone(date, timeZone, "MMM");
+export function formatMonth(date: Date | string, timeZone: string): string {
+  return formatInTimeZone(asDate(date), timeZone, "MMM");
 }
 
-export function formatDay(date: Date, timeZone: string): string {
-  return formatInTimeZone(date, timeZone, "d");
+export function formatDay(date: Date | string, timeZone: string): string {
+  return formatInTimeZone(asDate(date), timeZone, "d");
 }
 
-export function formatWeekday(date: Date, timeZone: string): string {
-  return formatInTimeZone(date, timeZone, "EEE");
+export function formatWeekday(date: Date | string, timeZone: string): string {
+  return formatInTimeZone(asDate(date), timeZone, "EEE");
+}
+
+/** Defaults for the event form, computed outside a component render. */
+export function defaultOccurrenceInputs(daysAhead = 7): { start: string; end: string } {
+  const base = new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000);
+  const day = base.toISOString().slice(0, 10);
+  return { start: `${day}T19:00`, end: `${day}T22:00` };
 }
