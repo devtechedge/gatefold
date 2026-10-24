@@ -702,3 +702,13 @@ textarea {
     background-position: 0 0, 0 9px, 9px -9px, -9px 0;
   }
 }
+
+.theme-icon-sun {
+  display: none;
+}
+[data-theme="dark"] .theme-icon-sun {
+  display: block;
+}
+[data-theme="dark"] .theme-icon-moon {
+  display: none;
+}
