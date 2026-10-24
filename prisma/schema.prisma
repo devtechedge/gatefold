@@ -1,0 +1,346 @@
+// Gatefold schema.
+//
+// Lifecycle states, roles and statuses are stored as strings so they stay
+// readable in SQL; the TypeScript domain layer is the typed source of truth and
+// the initial migration adds CHECK constraints for the values that matter.
+//
+// Money is integer minor units. All timestamps are UTC; the event timezone is
+// authoritative for display and sales-window boundaries.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  displayName  String
+  disabled     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions        Session[]
+  memberships     OrganizerMembership[] @relation("MembershipUser")
+  sentInvitations OrganizerMembership[] @relation("MembershipInvitedBy")
+  invitations     OrganizerInvitation[] @relation("InvitationInvitedBy")
+  ownedOrganizers Organizer[]           @relation("OrganizerOwner")
+  checkIns        CheckIn[]
+  auditEvents     AuditEvent[]
+
+  @@map("user")
+}
+
+model Session {
+  id         String    @id // sha256 of the opaque cookie token
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("session")
+}
+
+model Organizer {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  ownerId   String
+  owner     User     @relation("OrganizerOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships OrganizerMembership[]
+  invitations OrganizerInvitation[]
+  venues      Venue[]
+  events      Event[]
+  auditEvents AuditEvent[]
+
+  @@index([ownerId])
+  @@map("organizer")
+}
+
+model OrganizerMembership {
+  id          String    @id @default(cuid())
+  organizerId String
+  organizer   Organizer @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User      @relation("MembershipUser", fields: [userId], references: [id], onDelete: Cascade)
+  role        String    @default("CHECKIN") // OWNER | MANAGER | CHECKIN
+  status      String    @default("ACTIVE") // ACTIVE | SUSPENDED
+  invitedById String?
+  invitedBy   User?     @relation("MembershipInvitedBy", fields: [invitedById], references: [id], onDelete: SetNull)
+  invitedAt   DateTime?
+  acceptedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([organizerId, userId])
+  @@index([userId])
+  @@map("organizer_membership")
+}
+
+model OrganizerInvitation {
+  id          String    @id @default(cuid())
+  organizerId String
+  organizer   Organizer @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  email       String
+  role        String    @default("CHECKIN") // MANAGER | CHECKIN
+  tokenHash   String    @unique
+  invitedById String?
+  invitedBy   User?     @relation("InvitationInvitedBy", fields: [invitedById], references: [id], onDelete: SetNull)
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([organizerId, email])
+  @@map("organizer_invitation")
+}
+
+model Venue {
+  id            String    @id @default(cuid())
+  organizerId   String
+  organizer     Organizer @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  name          String
+  address       String
+  timezone      String
+  accessibility String    @default("")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  events Event[]
+
+  @@index([organizerId])
+  @@map("venue")
+}
+
+model Event {
+  id                 String    @id @default(cuid())
+  organizerId        String
+  organizer          Organizer @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  venueId            String
+  venue              Venue     @relation(fields: [venueId], references: [id], onDelete: Restrict)
+  title              String
+  slug               String    @unique
+  description        String
+  category           String
+  status             String    @default("DRAFT") // DRAFT | PUBLISHED | CANCELLED | COMPLETED
+  timezone           String
+  artwork            String    @default("vermilion") // vermilion | lime | cobalt | ink | rose
+  cancellationPolicy String    @default("Confirmed tickets can be cancelled by the buyer until 24 hours before the occurrence starts. If the organizer cancels the event, every issued ticket is voided.")
+  publishedAt        DateTime?
+  cancelledAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  occurrences  EventOccurrence[]
+  ticketTypes  TicketType[]
+  reservations Reservation[]
+
+  @@index([organizerId, status])
+  @@index([status, category])
+  @@map("event")
+}
+
+model EventOccurrence {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  startsAt  DateTime
+  endsAt    DateTime
+  status    String   @default("SCHEDULED") // SCHEDULED | CANCELLED
+  label     String   @default("")
+  createdAt DateTime @default(now())
+
+  inventories TicketInventory[]
+  lines       ReservationLine[]
+
+  @@unique([eventId, startsAt])
+  @@index([startsAt])
+  @@map("event_occurrence")
+}
+
+model TicketType {
+  id           String    @id @default(cuid())
+  eventId      String
+  event        Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  label        String
+  description  String    @default("")
+  currency     String    @default("USD")
+  priceMinor   Int
+  salesStartAt DateTime?
+  salesEndAt   DateTime?
+  visibility   String    @default("PUBLIC") // PUBLIC | HIDDEN
+  status       String    @default("ACTIVE") // ACTIVE | ARCHIVED
+  sortOrder    Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  inventories TicketInventory[]
+  lines       ReservationLine[]
+
+  @@index([eventId, status])
+  @@map("ticket_type")
+}
+
+model TicketInventory {
+  id           String          @id @default(cuid())
+  occurrenceId String
+  occurrence   EventOccurrence @relation(fields: [occurrenceId], references: [id], onDelete: Cascade)
+  ticketTypeId String
+  ticketType   TicketType      @relation(fields: [ticketTypeId], references: [id], onDelete: Cascade)
+  capacity     Int
+  held         Int             @default(0)
+  sold         Int             @default(0)
+  version      Int             @default(0)
+  updatedAt    DateTime        @updatedAt
+
+  @@unique([occurrenceId, ticketTypeId])
+  @@index([ticketTypeId])
+  @@map("ticket_inventory")
+}
+
+model Reservation {
+  id                 String    @id @default(cuid())
+  publicTokenHash    String    @unique // legacy lookup guard; the access ref is signed, not stored raw
+  accessVersion      Int       @default(1)
+  organizerId        String
+  eventId            String
+  event              Event     @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  state              String    @default("PENDING_HOLD") // PENDING_HOLD | CONFIRMED | CANCELLED | EXPIRED
+  buyerName          String
+  buyerEmail         String
+  buyerPhone         String    @default("")
+  currency           String
+  totalMinor         Int
+  holdExpiresAt      DateTime
+  confirmedAt        DateTime?
+  cancelledAt        DateTime?
+  expiredAt          DateTime?
+  cancellationReason String    @default("")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  lines            ReservationLine[]
+  demoConfirmation DemoConfirmation?
+
+  @@index([eventId, state])
+  @@index([organizerId, state])
+  @@index([state, holdExpiresAt])
+  @@map("reservation")
+}
+
+model ReservationLine {
+  id             String          @id @default(cuid())
+  reservationId  String
+  reservation    Reservation     @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  ticketTypeId   String
+  ticketType     TicketType      @relation(fields: [ticketTypeId], references: [id], onDelete: Restrict)
+  occurrenceId   String
+  occurrence     EventOccurrence @relation(fields: [occurrenceId], references: [id], onDelete: Restrict)
+  labelSnapshot  String
+  quantity       Int
+  unitPriceMinor Int
+  tickets        IssuedTicket[]
+
+  @@unique([reservationId, ticketTypeId, occurrenceId])
+  @@index([occurrenceId])
+  @@map("reservation_line")
+}
+
+model IssuedTicket {
+  id                String          @id @default(cuid())
+  reservationLineId String
+  reservationLine   ReservationLine @relation(fields: [reservationLineId], references: [id], onDelete: Cascade)
+  publicId          String          @unique
+  attendeeName      String
+  attendeeEmail     String          @default("")
+  status            String          @default("VALID") // VALID | VOID
+  issuedAt          DateTime        @default(now())
+  revokedAt         DateTime?
+  revocationReason  String          @default("")
+
+  checkIn CheckIn?
+
+  @@index([reservationLineId])
+  @@map("issued_ticket")
+}
+
+model CheckIn {
+  id          String       @id @default(cuid())
+  ticketId    String       @unique
+  ticket      IssuedTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  staffUserId String
+  staff       User         @relation(fields: [staffUserId], references: [id], onDelete: Restrict)
+  scannedAt   DateTime     @default(now())
+  gateLabel   String       @default("")
+  method      String       @default("SCAN") // SCAN | MANUAL
+
+  @@index([staffUserId, scannedAt])
+  @@map("check_in")
+}
+
+model DemoConfirmation {
+  id            String      @id @default(cuid())
+  reservationId String      @unique
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+  amountMinor   Int
+  currency      String
+  method        String      @default("demo") // recorded simulated confirmation, never a real payment
+  reference     String      @unique
+  createdAt     DateTime    @default(now())
+
+  @@map("demo_confirmation")
+}
+
+model AuditEvent {
+  id          String    @id @default(cuid())
+  organizerId String
+  organizer   Organizer @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  actorUserId String?
+  actor       User?     @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+  action      String
+  targetType  String    @default("")
+  targetId    String    @default("")
+  metadata    String    @default("{}")
+  createdAt   DateTime  @default(now())
+
+  @@index([organizerId, createdAt])
+  @@map("audit_event")
+}
+
+model IdempotencyRecord {
+  id           String   @id @default(cuid())
+  scope        String
+  key          String
+  requestHash  String
+  status       String   @default("PROCESSING") // PROCESSING | COMPLETED
+  responseJson String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([scope, key])
+  @@index([createdAt])
+  @@map("idempotency_record")
+}
+
+model RateLimit {
+  id          String   @id @default(cuid())
+  key         String
+  windowStart DateTime
+  count       Int      @default(1)
+
+  @@unique([key, windowStart])
+  @@index([windowStart])
+  @@map("rate_limit")
+}
