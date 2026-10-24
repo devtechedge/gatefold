@@ -199,6 +199,18 @@ export async function invitationByToken(token: string) {
   });
 }
 
+export function invitationIsUsable(invitation: {
+  expiresAt: Date;
+  revokedAt: Date | null;
+  acceptedAt: Date | null;
+}): boolean {
+  return (
+    !invitation.revokedAt &&
+    !invitation.acceptedAt &&
+    invitation.expiresAt.getTime() > Date.now()
+  );
+}
+
 export async function acceptInvitation(token: string, userId: string) {
   const invitation = await invitationByToken(token);
   if (
@@ -253,6 +265,32 @@ export async function acceptInvitation(token: string, userId: string) {
     });
   });
   return invitation.organizer;
+}
+
+export async function deleteOwnAccount(userId: string): Promise<void> {
+  const owned = await prisma.organizer.count({ where: { ownerId: userId } });
+  if (owned > 0) {
+    throw new HttpError(
+      "FORBIDDEN",
+      "You still own an organizer. Remove or transfer the organizer before deleting this account.",
+      403
+    );
+  }
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+  if (!user) return;
+  await prisma.$transaction(async (tx) => {
+    await tx.session.deleteMany({ where: { userId } });
+    await tx.organizerMembership.deleteMany({ where: { userId } });
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        email: `deleted-${userId}@invalid.local`,
+        displayName: "Deleted account",
+        passwordHash: `disabled-${randomToken(16)}`,
+        disabled: true,
+      },
+    });
+  });
 }
 
 export async function listTeam(organizerId: string) {
