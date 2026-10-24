@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { HttpError } from "@/lib/errors";
 import { parseReservationRef, verifyReservationRef } from "@/lib/access";
