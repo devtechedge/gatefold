@@ -19,7 +19,7 @@ export function OrganizerShell({
 }) {
   const links = [
     { href: "/organizer", label: "Overview" },
-    { href: "/organizer/events/new", label: "New event" },
+    { href: "/organizer/events/new", label: "New event", manage: true },
     { href: "/organizer/team", label: "Team", owner: true },
     { href: "/organizer/settings", label: "Settings", owner: true },
     { href: "/organizer/account", label: "Account" },
@@ -53,6 +53,7 @@ export function OrganizerShell({
             {links.map((link) => {
               if (link.owner && role && !can(role, "team:manage")) return null;
               if (link.owner && !role) return null;
+              if (link.manage && (!role || !can(role, "event:manage"))) return null;
               return (
                 <Link key={link.href} href={link.href} className="org-nav-link shrink-0 whitespace-nowrap">
                   {link.label}

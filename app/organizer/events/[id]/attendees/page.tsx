@@ -75,6 +75,7 @@ export default async function AttendeesPage({
         <Link href={`/organizer/events/${id}/tickets`} className="btn btn-sm btn-ghost">Tickets</Link>
         <Link href={`/organizer/events/${id}/attendees`} className="btn btn-sm btn-primary" aria-current="page">Attendees</Link>
         <Link href={`/organizer/events/${id}/check-in`} className="btn btn-sm btn-ghost">Check-in</Link>
+        <Link href={`/organizer/events/${id}/staff`} className="btn btn-sm btn-ghost">Staff</Link>
       </nav>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-4">

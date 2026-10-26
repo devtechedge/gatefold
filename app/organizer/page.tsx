@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { requirePageUser } from "@/lib/auth/session";
 import { requireMembershipForPage } from "@/lib/auth/organizer";
 import { organizerDashboard } from "@/services/dashboard";
+import { assignedEventIds } from "@/services/events";
 import { ROLE_LABELS, type Role } from "@/domain/permissions";
 import { formatDateTime } from "@/lib/dates";
 
@@ -37,30 +38,42 @@ export default async function OrganizerHomePage() {
   const membership = await requireMembershipForPage(user.id);
   if (!membership) redirect("/organizer/new");
   const role = membership.role as Role;
-  const data = await organizerDashboard(membership.organizerId);
+  const scopedEventIds = role === "CHECKIN" ? await assignedEventIds(user.id, membership.organizerId) : undefined;
+  const data = await organizerDashboard(membership.organizerId, scopedEventIds);
 
   const tasks: { title: string; detail: string; href: string }[] = [];
-  const firstDraft = data.events.find((event) => event.status === "DRAFT");
-  if (data.stats.drafts > 0 && firstDraft) {
-    tasks.push({
-      title: `${data.stats.drafts} draft ${data.stats.drafts === 1 ? "event" : "events"} not published`,
-      detail: "Add ticket types, then publish when the room is ready.",
-      href: `/organizer/events/${firstDraft.id}`,
-    });
-  }
-  for (const event of data.lowInventory) {
-    tasks.push({
-      title: `${event.title} has ${event.capacity - event.sold - event.held} tickets left`,
-      detail: "Review capacity or expect a sell-out.",
-      href: `/organizer/events/${event.id}/tickets`,
-    });
-  }
-  if (data.stats.pendingHolds > 0) {
-    tasks.push({
-      title: `${data.stats.pendingHolds} ${data.stats.pendingHolds === 1 ? "hold is" : "holds are"} awaiting checkout`,
-      detail: "Holds expire after ten minutes and release their seats.",
-      href: data.upcoming[0] ? `/organizer/events/${data.upcoming[0].id}/attendees?state=PENDING_HOLD` : "/organizer",
-    });
+  if (role === "CHECKIN") {
+    const first = data.upcoming[0];
+    if (first) {
+      tasks.push({
+        title: "Your door assignment",
+        detail: `Check in attendees for ${first.title}.`,
+        href: `/organizer/events/${first.id}/check-in`,
+      });
+    }
+  } else {
+    const firstDraft = data.events.find((event) => event.status === "DRAFT");
+    if (data.stats.drafts > 0 && firstDraft) {
+      tasks.push({
+        title: `${data.stats.drafts} draft ${data.stats.drafts === 1 ? "event" : "events"} not published`,
+        detail: "Add ticket types, then publish when the room is ready.",
+        href: `/organizer/events/${firstDraft.id}`,
+      });
+    }
+    for (const event of data.lowInventory) {
+      tasks.push({
+        title: `${event.title} has ${event.capacity - event.sold - event.held} tickets left`,
+        detail: "Review capacity or expect a sell-out.",
+        href: `/organizer/events/${event.id}/tickets`,
+      });
+    }
+    if (data.stats.pendingHolds > 0) {
+      tasks.push({
+        title: `${data.stats.pendingHolds} ${data.stats.pendingHolds === 1 ? "hold is" : "holds are"} awaiting checkout`,
+        detail: "Holds expire after ten minutes and release their seats.",
+        href: data.upcoming[0] ? `/organizer/events/${data.upcoming[0].id}/attendees?state=PENDING_HOLD` : "/organizer",
+      });
+    }
   }
 
   return (
@@ -74,7 +87,9 @@ export default async function OrganizerHomePage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/organizer/events/new" className="btn btn-primary">New event</Link>
+          {role !== "CHECKIN" ? (
+            <Link href="/organizer/events/new" className="btn btn-primary">New event</Link>
+          ) : null}
           <Link href="/events" className="btn">View public site</Link>
         </div>
       </div>
@@ -207,7 +222,11 @@ export default async function OrganizerHomePage() {
 
           <div className="card p-5">
             <p className="eyebrow">Recent activity</p>
-            {data.recentAudit.length === 0 ? (
+            {role === "CHECKIN" ? (
+              <p className="mt-3 text-sm muted">
+                You see events assigned to you. Ask the organizer owner for assignment changes.
+              </p>
+            ) : data.recentAudit.length === 0 ? (
               <p className="mt-3 text-sm muted">No audit events yet.</p>
             ) : (
               <ul className="mt-3 space-y-3">

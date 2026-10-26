@@ -245,6 +245,14 @@ async function main() {
   await publishEvent(slowType.id, organizer.id, owner.id);
   await publishEvent(winterSwap.id, organizer.id, owner.id);
 
+  await prisma.eventStaffAssignment.createMany({
+    data: [nightMarket, zineFair, photoWalk, slowType, winterSwap].map((event) => ({
+      eventId: event.id,
+      userId: staff.id,
+    })),
+    skipDuplicates: true,
+  });
+
   const nightOccurrence = await prisma.eventOccurrence.findFirstOrThrow({
     where: { eventId: nightMarket.id },
     orderBy: { startsAt: "asc" },

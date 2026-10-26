@@ -53,6 +53,7 @@ export default async function TicketsPage({ params }: { params: Promise<{ id: st
         <Link href={`/organizer/events/${id}/tickets`} className="btn btn-sm btn-primary" aria-current="page">Tickets</Link>
         <Link href={`/organizer/events/${id}/attendees`} className="btn btn-sm btn-ghost">Attendees</Link>
         <Link href={`/organizer/events/${id}/check-in`} className="btn btn-sm btn-ghost">Check-in</Link>
+        <Link href={`/organizer/events/${id}/staff`} className="btn btn-sm btn-ghost">Staff</Link>
       </nav>
 
       {cancelled ? (

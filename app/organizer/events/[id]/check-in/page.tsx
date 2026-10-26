@@ -46,6 +46,7 @@ export default async function CheckInPage({ params }: { params: Promise<{ id: st
             <Link href={`/organizer/events/${id}`} className="btn btn-sm btn-ghost">Overview</Link>
             <Link href={`/organizer/events/${id}/tickets`} className="btn btn-sm btn-ghost">Tickets</Link>
             <Link href={`/organizer/events/${id}/attendees`} className="btn btn-sm btn-ghost">Attendees</Link>
+            <Link href={`/organizer/events/${id}/staff`} className="btn btn-sm btn-ghost">Staff</Link>
           </>
         ) : null}
         <Link href={`/organizer/events/${id}/check-in`} className="btn btn-sm btn-primary" aria-current="page">Check-in</Link>

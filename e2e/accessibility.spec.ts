@@ -54,6 +54,7 @@ test("organizer surfaces have no serious or critical axe findings", async ({ pag
     `${eventHref}/tickets`,
     `${eventHref}/attendees`,
     `${eventHref}/check-in`,
+    `${eventHref}/staff`,
     "/organizer/team",
     "/organizer/settings",
     "/organizer/account",

@@ -25,13 +25,14 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  sessions        Session[]
-  memberships     OrganizerMembership[] @relation("MembershipUser")
-  sentInvitations OrganizerMembership[] @relation("MembershipInvitedBy")
-  invitations     OrganizerInvitation[] @relation("InvitationInvitedBy")
-  ownedOrganizers Organizer[]           @relation("OrganizerOwner")
-  checkIns        CheckIn[]
-  auditEvents     AuditEvent[]
+  sessions         Session[]
+  memberships      OrganizerMembership[]  @relation("MembershipUser")
+  sentInvitations  OrganizerMembership[]  @relation("MembershipInvitedBy")
+  invitations      OrganizerInvitation[]  @relation("InvitationInvitedBy")
+  ownedOrganizers  Organizer[]            @relation("OrganizerOwner")
+  checkIns         CheckIn[]
+  eventAssignments EventStaffAssignment[]
+  auditEvents      AuditEvent[]
 
   @@map("user")
 }
@@ -143,9 +144,10 @@ model Event {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  occurrences  EventOccurrence[]
-  ticketTypes  TicketType[]
-  reservations Reservation[]
+  occurrences      EventOccurrence[]
+  ticketTypes      TicketType[]
+  reservations     Reservation[]
+  staffAssignments EventStaffAssignment[]
 
   @@index([organizerId, status])
   @@index([status, category])
@@ -342,4 +344,17 @@ model RateLimit {
   @@unique([key, windowStart])
   @@index([windowStart])
   @@map("rate_limit")
+}
+
+model EventStaffAssignment {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, userId])
+  @@index([userId])
+  @@map("event_staff_assignment")
 }

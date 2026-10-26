@@ -105,6 +105,9 @@ export async function createFixture(options: {
       capacity: options.capacity,
     },
   });
+  await prisma.eventStaffAssignment.create({
+    data: { eventId: event.id, userId: staff.id },
+  });
   return {
     suffix,
     ownerId: owner.id,

@@ -15,9 +15,9 @@ export interface DashboardEvent {
   ticketTypes: number;
 }
 
-export async function organizerDashboard(organizerId: string) {
+export async function organizerDashboard(organizerId: string, eventIds?: string[]) {
   const events = await prisma.event.findMany({
-    where: { organizerId },
+    where: { organizerId, ...(eventIds ? { id: { in: eventIds } } : {}) },
     orderBy: { createdAt: "desc" },
     include: {
       occurrences: { orderBy: { startsAt: "asc" }, select: { startsAt: true, status: true } },
@@ -63,9 +63,13 @@ export async function organizerDashboard(organizerId: string) {
 
   const [checkedIn, pendingHolds, recentAudit] = await Promise.all([
     prisma.checkIn.count({
-      where: { ticket: { reservationLine: { occurrence: { event: { organizerId } } } } },
+      where: eventIds
+        ? { ticket: { reservationLine: { occurrence: { eventId: { in: eventIds } } } } }
+        : { ticket: { reservationLine: { occurrence: { event: { organizerId } } } } },
     }),
-    prisma.reservation.count({ where: { organizerId, state: "PENDING_HOLD" } }),
+    prisma.reservation.count({
+      where: { organizerId, state: "PENDING_HOLD", ...(eventIds ? { eventId: { in: eventIds } } : {}) },
+    }),
     prisma.auditEvent.findMany({
       where: { organizerId },
       orderBy: { createdAt: "desc" },

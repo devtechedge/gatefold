@@ -8,6 +8,76 @@ import type { EventCreateInput } from "@/validation/schemas";
 import { releaseHeld, releaseSold } from "@/repositories/inventory";
 import { recordAudit } from "./audit";
 
+export async function assignedEventIds(userId: string, organizerId: string): Promise<string[]> {
+  const rows = await prisma.eventStaffAssignment.findMany({
+    where: { userId, event: { organizerId } },
+    select: { eventId: true },
+  });
+  return rows.map((row) => row.eventId);
+}
+
+export async function eventStaff(eventId: string, organizerId: string) {
+  const [members, assignments] = await Promise.all([
+    prisma.organizerMembership.findMany({
+      where: { organizerId, role: "CHECKIN", status: "ACTIVE" },
+      include: { user: { select: { id: true, displayName: true, email: true } } },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.eventStaffAssignment.findMany({ where: { eventId }, select: { userId: true } }),
+  ]);
+  const assigned = new Set(assignments.map((row) => row.userId));
+  return members.map((member) => ({
+    id: member.id,
+    userId: member.userId,
+    displayName: member.user.displayName,
+    email: member.user.email,
+    assigned: assigned.has(member.userId),
+  }));
+}
+
+export async function setEventStaffAssignment(input: {
+  eventId: string;
+  organizerId: string;
+  actorUserId: string;
+  userId: string;
+  assigned: boolean;
+}) {
+  const [event, member] = await Promise.all([
+    prisma.event.findUnique({ where: { id: input.eventId }, select: { organizerId: true, title: true } }),
+    prisma.organizerMembership.findUnique({
+      where: { organizerId_userId: { organizerId: input.organizerId, userId: input.userId } },
+      select: { role: true, status: true },
+    }),
+  ]);
+  if (!event || event.organizerId !== input.organizerId) {
+    throw new HttpError("NOT_FOUND", "Event not found.", 404);
+  }
+  if (!member || member.role !== "CHECKIN" || member.status !== "ACTIVE") {
+    throw new HttpError("VALIDATION_ERROR", "Choose an active check-in staff member.", 400);
+  }
+  await prisma.$transaction(async (tx) => {
+    if (input.assigned) {
+      await tx.eventStaffAssignment.upsert({
+        where: { eventId_userId: { eventId: input.eventId, userId: input.userId } },
+        update: {},
+        create: { eventId: input.eventId, userId: input.userId },
+      });
+    } else {
+      await tx.eventStaffAssignment.deleteMany({
+        where: { eventId: input.eventId, userId: input.userId },
+      });
+    }
+    await recordAudit(tx, {
+      organizerId: input.organizerId,
+      actorUserId: input.actorUserId,
+      action: input.assigned ? "event.staff_assigned" : "event.staff_unassigned",
+      targetType: "event",
+      targetId: input.eventId,
+      metadata: { userId: input.userId },
+    });
+  });
+}
+
 export async function uniqueOrganizerSlug(base: string): Promise<string> {
   const root = slugify(base) || "organizer";
   for (let attempt = 0; attempt < 20; attempt += 1) {

@@ -211,6 +211,29 @@ describe("authorization boundaries", () => {
     expect(staffContext.role).toBe("CHECKIN");
     const ownerContext = await organizerContext(first.ownerId, first.organizerId, "team:manage");
     expect(ownerContext.role).toBe("OWNER");
+
+    const assigned = await eventAccess(first.staffId, first.eventId, "checkin:perform");
+    expect(assigned.role).toBe("CHECKIN");
+    const unassigned = await prisma.user.create({
+      data: {
+        email: `unassigned-${first.suffix}@example.test`,
+        displayName: "Unassigned Staff",
+        passwordHash: "not-used-in-tests",
+      },
+    });
+    await prisma.organizerMembership.create({
+      data: {
+        organizerId: first.organizerId,
+        userId: unassigned.id,
+        role: "CHECKIN",
+        status: "ACTIVE",
+        acceptedAt: new Date(),
+      },
+    });
+    await expect(eventAccess(unassigned.id, first.eventId, "checkin:perform")).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    await prisma.user.delete({ where: { id: unassigned.id } }).catch(() => undefined);
   });
 
   it("returns attendee search results only for the scoped event", async () => {

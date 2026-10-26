@@ -53,6 +53,7 @@ export default async function EventPage({ params }: { params: Promise<{ id: stri
     { href: `/organizer/events/${id}/tickets`, label: "Tickets", active: false },
     { href: `/organizer/events/${id}/attendees`, label: "Attendees", active: false },
     { href: `/organizer/events/${id}/check-in`, label: "Check-in", active: false },
+    { href: `/organizer/events/${id}/staff`, label: "Staff", active: false },
   ];
 
   return (

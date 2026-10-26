@@ -56,6 +56,13 @@ export async function eventAccess(
   if (!membership || membership.status !== "ACTIVE") throw forbidden();
   const role = membership.role as Role;
   if (!can(role, capability)) throw forbidden();
+  if (role === "CHECKIN") {
+    const assignment = await prisma.eventStaffAssignment.findUnique({
+      where: { eventId_userId: { eventId, userId } },
+      select: { id: true },
+    });
+    if (!assignment) throw forbidden("You are not assigned to this event.");
+  }
   return { event, role };
 }
 
