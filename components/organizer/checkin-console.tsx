@@ -40,6 +40,11 @@ export function CheckInConsole({
   const scanningRef = useRef(false);
   const busyRef = useRef(false);
   const lastScan = useRef({ value: "", at: 0 });
+  const resultRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (result || error) resultRef.current?.scrollIntoView({ block: "nearest" });
+  }, [result, error]);
 
   const stopCamera = useCallback(() => {
     scanningRef.current = false;
@@ -237,7 +242,7 @@ export function CheckInConsole({
             </button>
           </form>
 
-          <div className="mt-4" role="status" aria-live="polite">
+          <div className="mt-4" role="status" aria-live="polite" ref={resultRef}>
             {error ? (
               <div className="scan-result-bad p-4">
                 <p className="text-sm font-medium">Not admitted</p>

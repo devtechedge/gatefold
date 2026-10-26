@@ -41,9 +41,9 @@ export default async function CheckInPage({ params }: { params: Promise<{ id: st
       </div>
 
       <nav aria-label="Event sections" className="mt-4 flex flex-wrap gap-1">
-        <Link href={`/organizer/events/${id}`} className="btn btn-sm btn-ghost">Overview</Link>
         {access.role !== "CHECKIN" ? (
           <>
+            <Link href={`/organizer/events/${id}`} className="btn btn-sm btn-ghost">Overview</Link>
             <Link href={`/organizer/events/${id}/tickets`} className="btn btn-sm btn-ghost">Tickets</Link>
             <Link href={`/organizer/events/${id}/attendees`} className="btn btn-sm btn-ghost">Attendees</Link>
           </>
