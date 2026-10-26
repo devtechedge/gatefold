@@ -79,7 +79,7 @@ export function OrganizerShell({
               Sign out
             </button>
           </form>
-          <p className="hidden text-[0.65rem] lg:mt-4 lg:block" style={{ color: "color-mix(in srgb, var(--paper) 45%, transparent)" }}>
+          <p className="hidden text-[0.65rem] lg:mt-4 lg:block" style={{ color: "color-mix(in srgb, var(--paper) 70%, transparent)" }}>
             Demo environment. No payments are processed.
           </p>
         </div>

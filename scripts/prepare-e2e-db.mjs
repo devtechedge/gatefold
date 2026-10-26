@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { Client } from "pg";
 
 try {
   process.loadEnvFile();
@@ -16,6 +17,14 @@ if (!database.includes("e2e") && !database.includes("test")) {
   throw new Error(`Refusing to prepare "${database}" for browser tests.`);
 }
 
+const cleanup = new Client({ connectionString: unpooled });
+await cleanup.connect();
+await cleanup.query(
+  "select pg_terminate_backend(pid) from pg_stat_activity where datname = $1 and pid <> pg_backend_pid()",
+  [database]
+);
+await cleanup.end();
+
 const env = {
   ...process.env,
   DATABASE_URL: pooled,
@@ -30,13 +39,6 @@ execFileSync(npx, ["prisma", "migrate", "deploy"], {
   stdio: "inherit",
   shell: process.platform === "win32",
 });
-execFileSync(npx, ["tsx", "scripts/seed-demo.ts"], {
-  env,
-  stdio: "inherit",
-  shell: process.platform === "win32",
-});
-// Seed twice so the reset order is proven repeatable before any browser test runs.
-console.log("Re-seeding to verify the reset path is repeatable.");
 execFileSync(npx, ["tsx", "scripts/seed-demo.ts"], {
   env,
   stdio: "inherit",
