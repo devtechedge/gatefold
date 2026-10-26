@@ -167,7 +167,8 @@ describe("ticket identities", () => {
     const payload = ticketQrPayload(code);
     expect(verifyQrPayload(payload)).toEqual({ kind: "signed", publicId: code });
     const parts = payload.split(".");
-    const tampered = `${parts[0]}.${parts[1]}.${parts[2].slice(0, -1)}A`;
+    const replacement = parts[2].endsWith("A") ? "B" : "A";
+    const tampered = `${parts[0]}.${parts[1]}.${parts[2].slice(0, -1)}${replacement}`;
     expect(verifyQrPayload(tampered).kind).toBe("invalid");
     expect(verifyQrPayload(code)).toEqual({ kind: "unsigned", publicId: code });
   });

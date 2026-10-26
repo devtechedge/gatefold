@@ -169,9 +169,11 @@ describe("check-in", () => {
     const reservation = await demoCheckout(hold.ref);
     const code = reservation.tickets[0].publicId;
 
+    const signed = ticketQrPayload(code);
+    const replacement = signed.endsWith("A") ? "B" : "A";
     await expect(
       verifyTicket({
-        payload: `${ticketQrPayload(code).slice(0, -1)}A`,
+        payload: `${signed.slice(0, -1)}${replacement}`,
         staffUserId: fixture.staffId,
         expectedEventId: fixture.eventId,
       })
