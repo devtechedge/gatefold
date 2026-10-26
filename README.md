@@ -1,8 +1,24 @@
 # Gatefold
 
+[![Live demo](https://img.shields.io/badge/live-demo-e2452a)](https://gatefold-app-seven.vercel.app)
+[![CI](https://github.com/devtechedge/gatefold/actions/workflows/ci.yml/badge.svg)](https://github.com/devtechedge/gatefold/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-17141c)](LICENSE)
+
 Event publishing, ticket inventory, issued tickets, and a check-in desk for independent organizers, venues, and small festivals.
 
 Gatefold is a working reference implementation, not a mockup. Every hold is a PostgreSQL transaction. Every ticket carries a signed, server-verifiable reference. Every scan is checked against live ticket, reservation, occurrence, and event state. Checkout is explicitly simulated: no payment provider is connected and no money is collected.
+
+## Live demo
+
+https://gatefold-app-seven.vercel.app
+
+> Demo deployment on Vercel with a seeded Neon PostgreSQL database. Checkout is simulated, no payment provider is connected, and no money is collected. The reservation, inventory, ticket, and check-in state are real.
+
+| Discovery | Event operations |
+| --- | --- |
+| ![Event discovery](docs/screenshots/01-home.png) | ![Organizer dashboard](docs/screenshots/05-organizer.png) |
+| ![Event catalogue](docs/screenshots/02-events.png) | ![Event detail](docs/screenshots/03-event-detail.png) |
+| ![Issued ticket](docs/screenshots/04-ticket.png) | ![Mobile check-in](docs/screenshots/06-check-in.png) |
 
 ## What it does
 
@@ -77,7 +93,7 @@ These accounts exist only in the seeded demo. Do not reuse their passwords anywh
 | Event manager | `manager@gatefold.test` | `demo-password-1` |
 | Check-in staff | `staff@gatefold.test` | `demo-password-1` |
 
-The seed also creates a stable demo ticket at `/ticket/GF-7K2M-9Q4X-3B8N-6T1V-5W0Z`, a pending hold, a cancelled reservation, a cancelled event, and an invitation for `newstaff@example.test`.
+The seed also creates a checked-in demo ticket at `/ticket/GF-7K2M-9Q4X-3B8N-6T1V-5W0Z`, a valid unchecked ticket at `/ticket/GF-4Y7R-2C9P-8M3K-6X1T-0Z5V`, a pending hold, a cancelled reservation, a cancelled event, and an invitation for `newstaff@example.test`.
 
 ## Tests
 
@@ -155,7 +171,7 @@ Sessions are opaque random tokens stored as SHA-256 hashes with a server pepper.
 
 ## Deployment
 
-Gatefold is designed for a Vercel deployment with a PostgreSQL database. Set the values from `.env.example` in the hosting environment. Run `prisma migrate deploy` before serving new code. Seed only a designated demo environment. The health endpoint is `/api/health`.
+The demo deployment runs on Vercel at https://gatefold-app-seven.vercel.app with a Neon PostgreSQL database. Set the values from `.env.example` in the hosting environment. Run `prisma migrate deploy` before serving new code. Seed only a designated demo environment. The health endpoint is `/api/health`.
 
 ## Known limitations
 
