@@ -280,9 +280,11 @@ export default async function EventPage({ params }: { params: Promise<{ slug: st
                 {minPrice === 0 ? "Free entry" : `From ${formatMoney(minPrice, currency)}`}
               </p>
             </div>
-            <a href="#tickets" className={`btn ${soldOut ? "btn-ghost" : "btn-primary"}`} aria-disabled={soldOut}>
-              {soldOut ? "Sold out" : "Choose tickets"}
-            </a>
+            {soldOut ? (
+              <span className="btn btn-ghost" style={{ opacity: 0.6 }}>Sold out</span>
+            ) : (
+              <a href="#tickets" className="btn btn-primary">Choose tickets</a>
+            )}
           </div>
         </div>
       ) : null}

@@ -2,19 +2,27 @@ import Link from "next/link";
 import { EventArtwork } from "@/components/event-artwork";
 import { EventCard } from "@/components/event-card";
 import { catalogue } from "@/repositories/events";
+import { prisma } from "@/lib/db";
 import { formatDate, formatMoney, formatTime } from "@/lib/dates";
 
 export default async function HomePage() {
-  const { rows } = await catalogue({
-    q: "",
-    category: "",
-    from: "",
-    to: "",
-    price: "ALL",
-    availability: "AVAILABLE",
-    offset: 0,
-    take: 6,
-  });
+  const [catalogueResult, sampleTicket] = await Promise.all([
+    catalogue({
+      q: "",
+      category: "",
+      from: "",
+      to: "",
+      price: "ALL",
+      availability: "AVAILABLE",
+      offset: 0,
+      take: 6,
+    }),
+    prisma.issuedTicket.findUnique({
+      where: { publicId: "GF-7K2M-9Q4X-3B8N-6T1V-5W0Z" },
+      select: { publicId: true },
+    }),
+  ]);
+  const rows = catalogueResult.rows;
   const featured = rows[0] ?? null;
 
   return (
@@ -107,15 +115,7 @@ export default async function HomePage() {
                   </div>
                   <div
                     aria-hidden="true"
-                    className="h-8 border-t-2 border-dashed border-line-strong"
-                    style={{
-                      backgroundImage:
-                        "repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 5px)",
-                      backgroundSize: "100% 14px",
-                      backgroundPosition: "center",
-                      backgroundRepeat: "no-repeat",
-                      opacity: 0.75,
-                    }}
+                    className="barcode mx-5 my-4 border-t-2 border-dashed border-line-strong"
                   />
                 </div>
               ) : (
@@ -152,13 +152,20 @@ export default async function HomePage() {
           </div>
         )}
         <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-          <p className="text-sm muted">
-            The sample ticket is available at{" "}
-            <Link className="link" href="/ticket/GF-7K2M-9Q4X-3B8N-6T1V-5W0Z">
-              /ticket/GF-7K2M-9Q4X-3B8N-6T1V-5W0Z
-            </Link>
-            .
-          </p>
+          {sampleTicket ? (
+            <p className="text-sm muted">
+              The sample ticket is available at{" "}
+              <Link className="link" href={`/ticket/${sampleTicket.publicId}`}>
+                /ticket/{sampleTicket.publicId}
+              </Link>
+              .
+            </p>
+          ) : (
+            <p className="text-sm muted">
+              Reservation links are saved by the buyer.{" "}
+              <Link href="/reservation" className="link">Retrieve a reservation</Link>.
+            </p>
+          )}
           <Link href="/reservation" className="eyebrow link">
             Retrieve a reservation
           </Link>
