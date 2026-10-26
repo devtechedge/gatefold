@@ -55,6 +55,21 @@ export async function loginUser(input: { email: string; password: string }): Pro
   return { id: user.id };
 }
 
+export async function changePassword(input: {
+  userId: string;
+  currentPassword: string;
+  newPassword: string;
+}): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { id: input.userId } });
+  if (!user || user.disabled) throw new HttpError("NOT_FOUND", "Account not found.", 404);
+  const valid = await verifyPassword(input.currentPassword, user.passwordHash);
+  if (!valid) {
+    throw new HttpError("UNAUTHORIZED", "The current password is incorrect.", 401);
+  }
+  const passwordHash = await hashPassword(input.newPassword);
+  await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
+}
+
 export async function createOrganizerForUser(userId: string, name: string) {
   const slug = await uniqueOrganizerSlug(name);
   return prisma.$transaction(async (tx) => {

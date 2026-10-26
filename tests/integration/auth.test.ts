@@ -3,7 +3,8 @@ import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { randomToken, sha256 } from "@/lib/ids";
-import { acceptInvitation, deleteOwnAccount, inviteMember } from "@/services/auth";
+import { acceptInvitation, changePassword, deleteOwnAccount, inviteMember } from "@/services/auth";
+import { hashPassword, verifyPassword } from "@/lib/password";
 import { createFixture, cleanupFixture, type Fixture } from "../helpers/fixtures";
 
 const fixtures: Fixture[] = [];
@@ -102,5 +103,24 @@ describe("invitation acceptance", () => {
     await expect(acceptInvitation(invitation.token, wrongUser.id)).rejects.toMatchObject({
       code: "FORBIDDEN",
     });
+  });
+});
+
+describe("password change", () => {
+  it("changes the hash only with the current password", async () => {
+    const fixture = await make();
+    const oldHash = await hashPassword("old-password-1");
+    await prisma.user.update({ where: { id: fixture.ownerId }, data: { passwordHash: oldHash } });
+    await expect(
+      changePassword({ userId: fixture.ownerId, currentPassword: "wrong-password", newPassword: "new-password-1" })
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+    await changePassword({
+      userId: fixture.ownerId,
+      currentPassword: "old-password-1",
+      newPassword: "new-password-1",
+    });
+    const updated = await prisma.user.findUniqueOrThrow({ where: { id: fixture.ownerId } });
+    expect(await verifyPassword("new-password-1", updated.passwordHash)).toBe(true);
+    expect(await verifyPassword("old-password-1", updated.passwordHash)).toBe(false);
   });
 });

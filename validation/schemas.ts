@@ -16,6 +16,17 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Enter your password.").max(200),
 });
 
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter your current password.").max(200),
+    newPassword: z.string().min(10, "Use at least 10 characters.").max(200),
+    confirmPassword: z.string().min(10, "Confirm the new password.").max(200),
+  })
+  .refine((value) => value.newPassword === value.confirmPassword, {
+    message: "The new passwords do not match.",
+    path: ["confirmPassword"],
+  });
+
 export const organizerCreateSchema = z.object({
   name: z.string().trim().min(2, "Organizer name is required.").max(100),
 });

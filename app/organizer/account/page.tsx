@@ -4,7 +4,7 @@ import { requirePageUser } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 import { ROLE_LABELS, type Role } from "@/domain/permissions";
 import { ActionForm } from "@/components/action-form";
-import { deleteAccountAction } from "@/app/organizer/actions";
+import { changePasswordAction, deleteAccountAction } from "@/app/organizer/actions";
 import { logoutAction } from "@/app/actions";
 
 export const metadata: Metadata = { title: "Account", robots: { index: false } };
@@ -47,6 +47,25 @@ export default async function AccountPage() {
                 ))}
               </ul>
             )}
+          </section>
+
+          <section className="card p-5">
+            <p className="eyebrow">Password</p>
+            <h2 className="display-m mt-2">Change password</h2>
+            <p className="mt-2 text-sm muted">
+              Enter your current password and a new one. Other sessions are signed out after the
+              change. Email delivery is not configured, so signed-out password reset is not offered.
+            </p>
+            <div className="mt-4 max-w-md">
+              <ActionForm action={changePasswordAction} submitLabel="Update password">
+                <label className="label" htmlFor="current-password">Current password</label>
+                <input id="current-password" name="currentPassword" type="password" className="input" required autoComplete="current-password" />
+                <label className="label mt-3" htmlFor="new-password">New password</label>
+                <input id="new-password" name="newPassword" type="password" className="input" required minLength={10} autoComplete="new-password" />
+                <label className="label mt-3" htmlFor="confirm-password">Confirm new password</label>
+                <input id="confirm-password" name="confirmPassword" type="password" className="input" required minLength={10} autoComplete="new-password" />
+              </ActionForm>
+            </div>
           </section>
 
           <section className="card border-2 border-accent-ink p-5">

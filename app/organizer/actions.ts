@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { destroySession, requirePageUser } from "@/lib/auth/session";
+import { destroyOtherSessions, destroySession, requirePageUser } from "@/lib/auth/session";
+import { rateLimit } from "@/lib/auth/rate-limit";
 import { eventAccess, requireMembershipForPage } from "@/lib/auth/organizer";
 import { HttpError } from "@/lib/errors";
 import { can, type Capability, type Role } from "@/domain/permissions";
@@ -14,6 +15,7 @@ import {
   ticketTypeCreateSchema,
   ticketTypeUpdateSchema,
   inviteSchema,
+  changePasswordSchema,
 } from "@/validation/schemas";
 import {
   createEvent,
@@ -25,6 +27,7 @@ import {
   updateTicketType,
   setTicketTypeStatus,
   setTicketTypeVisibility,
+  setEventStaffAssignment,
   updateCapacity,
 } from "@/services/events";
 import {
@@ -34,6 +37,7 @@ import {
   updateMemberRole,
   removeMember,
   deleteOwnAccount,
+  changePassword,
 } from "@/services/auth";
 import { cancelReservationAsOrganizer } from "@/services/reservations";
 import type { ActionState } from "@/lib/action-state";
@@ -323,6 +327,31 @@ export async function updateCapacityAction(
   return { message: "Capacity updated." };
 }
 
+export async function setEventStaffAction(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const user = await requirePageUser("/organizer");
+  const eventId = text(formData, "eventId");
+  const access = await eventAccess(user.id, eventId, "event:manage");
+  const assigned = text(formData, "assigned") === "true";
+  try {
+    await setEventStaffAssignment({
+      eventId,
+      organizerId: access.event.organizerId,
+      actorUserId: user.id,
+      userId: text(formData, "userId"),
+      assigned,
+    });
+  } catch (error) {
+    return toError(error);
+  }
+  revalidatePath(`/organizer/events/${eventId}/staff`);
+  revalidatePath(`/organizer/events/${eventId}/check-in`);
+  revalidatePath("/organizer");
+  return { message: assigned ? "Check-in staff assigned to this event." : "Check-in staff removed from this event." };
+}
+
 export async function cancelReservationAction(
   _state: ActionState,
   formData: FormData
@@ -373,6 +402,32 @@ export async function updateOrganizerSettingsAction(
   revalidatePath("/organizer/settings");
   revalidatePath("/organizer");
   return { message: "Organizer settings saved." };
+}
+
+export async function changePasswordAction(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const user = await requirePageUser("/organizer/account");
+  const parsed = changePasswordSchema.safeParse({
+    currentPassword: text(formData, "currentPassword"),
+    newPassword: text(formData, "newPassword"),
+    confirmPassword: text(formData, "confirmPassword"),
+  });
+  if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the password fields." };
+  const limit = await rateLimit(`password:user:${user.id}`, 5, 3600);
+  if (!limit.allowed) return { error: "Too many password changes. Try again later." };
+  try {
+    await changePassword({
+      userId: user.id,
+      currentPassword: parsed.data.currentPassword,
+      newPassword: parsed.data.newPassword,
+    });
+    await destroyOtherSessions(user.id, user.sessionId);
+  } catch (error) {
+    return toError(error);
+  }
+  return { message: "Password updated. Other sessions were signed out." };
 }
 
 export async function deleteAccountAction(): Promise<ActionState> {
