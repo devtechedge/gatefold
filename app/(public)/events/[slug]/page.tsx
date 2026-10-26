@@ -23,6 +23,14 @@ export async function generateMetadata({
       title: event.title,
       description: event.description.slice(0, 200),
       type: "website",
+      images: [
+        {
+          url: "/og.png",
+          width: 1200,
+          height: 630,
+          alt: `${event.title} on Gatefold`,
+        },
+      ],
     },
   };
 }
