@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { prisma } from "@/lib/db";
+import { prisma, TX_OPTIONS } from "@/lib/db";
 import { HttpError } from "@/lib/errors";
 import { reservationRef, parseReservationRef, verifyReservationRef } from "@/lib/access";
 import { sha256 } from "@/lib/ids";
@@ -347,7 +347,6 @@ export async function createHold(
         await tx.reservation.create({
           data: {
             id: reservationId,
-            publicTokenHash: sha256(ref),
             organizerId: event.organizerId,
             eventId: event.id,
             state: "PENDING_HOLD",
@@ -375,7 +374,7 @@ export async function createHold(
           });
         }
       },
-      { timeout: 25_000 }
+      TX_OPTIONS
     );
     return response;
   } catch (error) {
@@ -449,7 +448,7 @@ export async function expireOne(reservationId: string): Promise<boolean> {
       });
       return true;
     },
-    { timeout: 25_000 }
+    TX_OPTIONS
   );
 }
 
@@ -532,7 +531,7 @@ export async function cancelReservationByRef(
       });
       return "cancelled";
     },
-    { timeout: 25_000 }
+    TX_OPTIONS
   );
 
   if (outcome === "missing") throw new HttpError("NOT_FOUND", "Reservation not found.", 404);
@@ -602,7 +601,7 @@ export async function cancelReservationAsOrganizer(input: {
       });
       return { kind: "cancelled" as const, id: reservation.id, version: reservation.accessVersion + 1 };
     },
-    { timeout: 25_000 }
+    TX_OPTIONS
   );
 
   if (outcome.kind === "missing") throw new HttpError("NOT_FOUND", "Reservation not found.", 404);

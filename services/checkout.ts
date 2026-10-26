@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma, TX_OPTIONS } from "@/lib/db";
 import { HttpError } from "@/lib/errors";
 import { parseReservationRef, verifyReservationRef } from "@/lib/access";
 import { randomBase32, ticketPublicId } from "@/lib/ids";
@@ -168,7 +168,7 @@ export async function demoCheckout(
       });
       return { kind: "confirmed" as const };
     },
-    { timeout: 30_000 }
+    TX_OPTIONS
   );
 
   if (outcome.kind === "missing") throw new HttpError("NOT_FOUND", "Reservation not found.", 404);
@@ -189,19 +189,16 @@ export async function ticketView(publicId: string) {
       reservationLine: {
         include: {
           reservation: { select: { state: true, buyerName: true, buyerEmail: true } },
-          occurrence: true,
           ticketType: true,
-          // event and venue are reached through the occurrence below
+          occurrence: {
+            include: { event: { include: { venue: true, organizer: true } } },
+          },
         },
       },
     },
   });
   if (!ticket) return null;
-  const occurrence = await prisma.eventOccurrence.findUnique({
-    where: { id: ticket.reservationLine.occurrenceId },
-    include: { event: { include: { venue: true, organizer: true } } },
-  });
-  if (!occurrence) return null;
+  const occurrence = ticket.reservationLine.occurrence;
   const usable =
     ticket.status === "VALID" &&
     ticket.reservationLine.reservation.state === "CONFIRMED" &&

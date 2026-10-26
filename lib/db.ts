@@ -19,3 +19,6 @@ export type TransactionClient = Omit<
   PrismaClient,
   "$connect" | "$disconnect" | "$on" | "$transaction" | "$use" | "$extends"
 >;
+
+/** Interactive transactions queue for a connection under contention instead of failing fast. */
+export const TX_OPTIONS = { maxWait: 20_000, timeout: 30_000 } as const;
