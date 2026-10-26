@@ -87,18 +87,6 @@ body {
   color: #fff;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button,
-input,
-select,
-textarea {
-  font: inherit;
-  color: inherit;
-}
 
 :focus-visible {
   outline: 3px solid var(--focus);
@@ -152,6 +140,17 @@ textarea {
 }
 
 @layer base {
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+    color: inherit;
+  }
   h1,
   h2,
   h3,
@@ -330,9 +329,12 @@ textarea {
     white-space: nowrap;
   }
   .chip-accent {
-    background: var(--accent);
-    border-color: var(--accent);
+    background: var(--accent-ink);
+    border-color: var(--accent-ink);
     color: #fff8f2;
+  }
+  [data-theme="dark"] .chip-accent {
+    color: #1a1110;
   }
   .chip-dark {
     background: var(--ink);
@@ -620,13 +622,22 @@ textarea {
   }
   @media (max-width: 900px) {
     .org-shell {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
     }
   }
   .org-aside {
+    min-width: 0;
     background: var(--ink);
     color: var(--paper);
     border-right: 1px solid var(--line);
+  }
+  .org-aside > * {
+    min-width: 0;
+  }
+  .org-shell main .card,
+  .org-shell main section,
+  .org-shell main aside {
+    min-width: 0;
   }
   @media (max-width: 900px) {
     .org-aside {
@@ -711,4 +722,58 @@ textarea {
 }
 [data-theme="dark"] .theme-icon-moon {
   display: none;
+}
+
+.barcode {
+  height: 28px;
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--ink) 0,
+    var(--ink) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  background-repeat: repeat-x;
+  background-position: left center;
+  opacity: 0.85;
+}
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  header,
+  footer,
+  .no-print,
+  .mobile-cta {
+    display: none !important;
+  }
+  main {
+    padding: 0 !important;
+  }
+  .shell,
+  .shell-narrow {
+    width: 100% !important;
+  }
+  .card,
+  .card-hard {
+    background: #fff !important;
+    border-color: #000 !important;
+    box-shadow: none !important;
+  }
+  .ticket-print {
+    break-inside: avoid;
+  }
+  a {
+    color: #000 !important;
+    text-decoration: none !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }

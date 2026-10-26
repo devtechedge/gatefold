@@ -66,7 +66,7 @@ export default async function TicketPage({ params }: { params: Promise<{ publicI
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_390px]">
-        <section className="card-hard overflow-hidden">
+        <section className="card-hard overflow-hidden ticket-print">
           <div className="border-b border-ink bg-paper-3 px-6 py-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="eyebrow">Gatefold / admit one</span>
@@ -138,7 +138,7 @@ export default async function TicketPage({ params }: { params: Promise<{ publicI
           </div>
         </section>
 
-        <aside className="space-y-5">
+        <aside className="space-y-5 no-print">
           {checkedIn ? (
             <div className="card p-5">
               <p className="eyebrow">Check-in record</p>

@@ -17,8 +17,8 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       className="btn btn-ghost btn-sm theme-toggle"
-      aria-label="Toggle dark theme"
-      title="Toggle dark theme"
+      aria-label="Switch color theme"
+      title="Switch color theme"
     >
       <svg className="theme-icon theme-icon-sun" width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <circle cx="12" cy="12" r="4.2" stroke="currentColor" strokeWidth="1.7" />

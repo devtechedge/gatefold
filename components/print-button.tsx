@@ -2,7 +2,7 @@
 
 export function PrintButton() {
   return (
-    <button type="button" className="btn btn-sm" onClick={() => window.print()}>
+    <button type="button" className="btn btn-sm no-print" onClick={() => window.print()}>
       Print ticket
     </button>
   );
