@@ -31,7 +31,7 @@ Use GitHub private vulnerability reporting on this repository. Do not open a pub
 
 | Threat | Control | Residual risk |
 | --- | --- | --- |
-| Account takeover | scrypt password hashes, opaque sessions, per-IP and per-email login limits, session revocation on account deletion | No MFA, no password reset, no breached-password check |
+| Account takeover | scrypt password hashes, opaque sessions, per-IP and per-email login limits, signed-in password change, session revocation on account deletion | No MFA, no signed-out password reset, no breached-password check |
 | Broken object-level authorization | Every organizer operation resolves membership from the signed-in user and the target event or organizer; client-supplied organizer IDs are not trusted; CHECKIN needs a per-event assignment | Assignment changes remain an organizer responsibility |
 | Reservation tampering | Access references are HMAC-derived over reservation id and access version; changing the id or version invalidates the link; organizer cancellation rotates the version | The link is a bearer capability. Anyone with it can view the record |
 | Inventory abuse | Atomic conditional update in SQL, affected-row checks, ten-minute holds, per-IP and per-email limits, database CHECK constraint | Attackers with many addresses or accounts can still create noise |
