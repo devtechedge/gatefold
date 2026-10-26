@@ -54,7 +54,7 @@ The CHECKIN role applies to the whole organizer rather than to assigned events. 
 
 Status: accepted.
 
-No mail provider is connected. Invitation links are displayed once after creation and must be shared by the organizer. Password reset is not offered because the product cannot deliver a reset message and will not pretend that it did. Add both only when a real provider exists.
+No mail provider is connected. Invitation links are displayed once after creation and must be shared by the organizer. Signed-out password reset is not offered because the product cannot deliver a reset message and will not pretend that it did. Signed-in users can change their password. Add email delivery only when a real provider exists.
 
 ## ADR-010: Event completion status is reserved
 

@@ -41,9 +41,10 @@ Dependencies point inward. A domain module never imports Prisma. A route handler
 
 1. A staff member is authorized against the event with `checkin:perform`.
 2. A signed payload is verified with HMAC. An unsigned manual code is normalized.
-3. The ticket is resolved with its line, reservation, occurrence, event, and check-in.
-4. Ticket status, reservation state, event state, occurrence state, and expected event are checked.
-5. A check-in row is inserted. The unique constraint on `ticketId` guarantees one record. A concurrent loser receives `ALREADY_USED` with the first scan time.
+3. For a CHECKIN account, the event assignment is checked before ticket resolution. Owners and managers skip that extra scope.
+4. The ticket is resolved with its line, reservation, occurrence, event, and check-in.
+5. Ticket status, reservation state, event state, occurrence state, and expected event are checked.
+6. A check-in row is inserted. The unique constraint on `ticketId` guarantees one record. A concurrent loser receives `ALREADY_USED` with the first scan time.
 
 ## Concurrency
 
@@ -75,6 +76,7 @@ Both paths lock the reservation row and re-check that it is still pending and du
 - Opaque 32-byte session tokens in an HttpOnly, SameSite=Lax cookie, stored as SHA-256 hashes with a server pepper.
 - scrypt password hashing with per-password salts.
 - Capability checks on every organizer and event operation. Owner, manager, and check-in staff have different capability sets.
+- CHECKIN access is scoped per event through `event_staff_assignment`. Owners and managers reach every event; a check-in account without an assignment is refused.
 - Buyer access uses signed reservation references. Ticket access uses unpredictable public ids plus authoritative state checks.
 
 ## Data model
@@ -83,6 +85,7 @@ Both paths lock the reservation row and re-check that it is still pending and du
 | --- | --- |
 | `user`, `session` | Accounts and hashed sessions |
 | `organizer`, `organizer_membership`, `organizer_invitation` | Tenant, roles, invitations |
+| `event_staff_assignment` | Per-event check-in staff scope |
 | `venue`, `event`, `event_occurrence` | Programme and schedule |
 | `ticket_type`, `ticket_inventory` | Prices, sales windows, capacity, held and sold |
 | `reservation`, `reservation_line` | Buyer holds, state, price snapshots |

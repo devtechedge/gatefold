@@ -30,6 +30,7 @@ https://gatefold-app-seven.vercel.app
 - Rejects duplicate scan records: the second scan of a ticket reports the first check-in time and writes nothing.
 - Releases held inventory on expiry and sold inventory on cancellation without deleting reservation or ticket history.
 - Provides a role-scoped organizer console for events, tickets, attendees, team management, and a mobile check-in desk.
+- Assigns check-in staff per event. Owners and managers can cover every event; a CHECKIN account only reaches the events it is assigned to.
 
 ## Core invariants
 
@@ -98,9 +99,9 @@ The seed also creates a checked-in demo ticket at `/ticket/GF-7K2M-9Q4X-3B8N-6T1
 
 ## Tests
 
-- 45 Vitest tests: 27 domain and schema tests, 18 PostgreSQL integration tests.
+- 46 Vitest tests: 27 domain and schema tests, 19 PostgreSQL integration tests.
 - 10 Playwright journeys: public catalogue and responsive widths, full booking and check-in, organizer publishing, role restrictions, security headers and health, maintenance authorization, accessibility audits, and print emulation.
-- The integration suite includes a 20-way race for the final ticket, over-capacity concurrency, idempotent reservation and checkout, repeated expiry workers, cancellation, event cancellation, duplicate scans, wrong-event scans, bad signatures, void tickets, cross-organizer denial, account anonymization, and invitation acceptance.
+- The integration suite includes a 20-way race for the final ticket, over-capacity concurrency, idempotent reservation and checkout, repeated expiry workers, cancellation, event cancellation, duplicate scans, wrong-event scans, bad signatures, void tickets, cross-organizer denial, per-event staff assignment, account anonymization, invitation acceptance, and password change.
 
 Run counts are reported in release notes rather than hardcoded here.
 
@@ -123,6 +124,7 @@ All API responses use `{ data }` on success and `{ error: { code, message, reque
 | GET | `/api/organizer/events/[id]/schedule` | Occurrences |
 | GET | `/api/organizer/events/[id]/attendees` | Bounded attendee search |
 | GET | `/api/organizer/events/[id]/check-in` | Check-in statistics and recent scans |
+| GET, POST | `/api/organizer/events/[id]/staff` | Per-event check-in assignments |
 | GET, POST | `/api/organizer/team` | Members, invitations, role management |
 | POST | `/api/internal/expire-holds` | Bearer-protected maintenance expiry |
 | GET | `/api/health` | Application and database health |
@@ -168,7 +170,7 @@ Checkout is a recorded simulated confirmation, not a payment. A `DemoConfirmatio
 
 ## Security
 
-Sessions are opaque random tokens stored as SHA-256 hashes with a server pepper. Passwords use scrypt. Reservation access references are HMAC-derived and revocable by rotating `accessVersion`. Organizer access is checked server-side for every scoped operation. The threat model, controls, and residual risks are in [SECURITY.md](SECURITY.md).
+Sessions are opaque random tokens stored as SHA-256 hashes with a server pepper. Passwords use scrypt, signed-in users can change their password, and changing it revokes other sessions. Reservation access references are HMAC-derived and revocable by rotating `accessVersion`. Organizer access is checked server-side for every scoped operation, and check-in staff are assigned per event. A baseline Content Security Policy is enabled in production. The threat model, controls, and residual risks are in [SECURITY.md](SECURITY.md).
 
 ## Deployment
 
@@ -177,11 +179,10 @@ The demo deployment runs on Vercel at https://gatefold-app-seven.vercel.app with
 ## Known limitations
 
 - Demo checkout only. No payment provider, refunds, tax, assigned seating, resale, or mobile app.
-- No email delivery. Password reset is intentionally absent. Invitation links are shown once after creation.
-- The CHECKIN role is organizer-wide rather than per-event.
+- No email delivery. Signed-in password change is available; signed-out password reset is not offered. Invitation links are shown once after creation.
 - Reservation and ticket links are bearer capabilities. Anyone with the link can view that record.
 - The demo uses a shared Neon host. Move to a dedicated project before real-event or paid use.
-- No independent security or accessibility audit has been performed. Accessibility targets WCAG 2.2 AA and is checked with axe-core in the browser suite.
+- No independent security or accessibility audit has been performed. Accessibility targets WCAG 2.2 AA and is checked with axe-core in the browser suite. The CSP allows inline scripts and styles for Next runtime; a nonce-based policy is still pending.
 - Event completion is a reserved status. Published events remain published after their last occurrence.
 
 ## License

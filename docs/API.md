@@ -155,6 +155,13 @@ Requires the attendee read capability. Check-in staff receive `FORBIDDEN`.
 
 `GET /api/organizer/events/[id]/check-in` returns issued and checked-in counts plus recent scans. Requires `checkin:perform`.
 
+## Event staff assignments
+
+- `GET /api/organizer/events/[id]/staff` returns CHECKIN members with an `assigned` flag.
+- `POST /api/organizer/events/[id]/staff` with `{ "userId": "...", "assigned": true }`.
+  Owners and managers can assign. A CHECKIN account without an assignment cannot open the
+  event check-in, attendee or verification endpoints.
+
 ## Team
 
 - `GET /api/organizer/team?organizerId=cm...`
