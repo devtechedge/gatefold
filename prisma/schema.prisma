@@ -212,7 +212,6 @@ model TicketInventory {
 
 model Reservation {
   id                 String    @id @default(cuid())
-  publicTokenHash    String    @unique // legacy lookup guard; the access ref is signed, not stored raw
   accessVersion      Int       @default(1)
   organizerId        String
   eventId            String

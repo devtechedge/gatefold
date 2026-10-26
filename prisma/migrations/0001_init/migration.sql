@@ -154,7 +154,6 @@ CREATE TABLE "ticket_inventory" (
 -- CreateTable
 CREATE TABLE "reservation" (
     "id" TEXT NOT NULL,
-    "publicTokenHash" TEXT NOT NULL,
     "accessVersion" INTEGER NOT NULL DEFAULT 1,
     "organizerId" TEXT NOT NULL,
     "eventId" TEXT NOT NULL,
@@ -321,7 +320,6 @@ CREATE INDEX "ticket_inventory_ticketTypeId_idx" ON "ticket_inventory"("ticketTy
 CREATE UNIQUE INDEX "ticket_inventory_occurrenceId_ticketTypeId_key" ON "ticket_inventory"("occurrenceId", "ticketTypeId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "reservation_publicTokenHash_key" ON "reservation"("publicTokenHash");
 
 -- CreateIndex
 CREATE INDEX "reservation_eventId_state_idx" ON "reservation"("eventId", "state");
@@ -470,3 +468,19 @@ ALTER TABLE "organizer_membership"
 
 ALTER TABLE "issued_ticket"
   ADD CONSTRAINT "issued_ticket_status_valid" CHECK ("status" IN ('VALID', 'VOID'));
+
+ALTER TABLE "event_occurrence"
+  ADD CONSTRAINT "event_occurrence_status_valid" CHECK ("status" IN ('SCHEDULED', 'CANCELLED'));
+
+ALTER TABLE "ticket_type"
+  ADD CONSTRAINT "ticket_type_status_valid" CHECK ("status" IN ('ACTIVE', 'ARCHIVED')),
+  ADD CONSTRAINT "ticket_type_visibility_valid" CHECK ("visibility" IN ('PUBLIC', 'HIDDEN'));
+
+ALTER TABLE "organizer_invitation"
+  ADD CONSTRAINT "organizer_invitation_role_valid" CHECK ("role" IN ('MANAGER', 'CHECKIN'));
+
+ALTER TABLE "check_in"
+  ADD CONSTRAINT "check_in_method_valid" CHECK ("method" IN ('SCAN', 'MANUAL'));
+
+ALTER TABLE "demo_confirmation"
+  ADD CONSTRAINT "demo_confirmation_method_valid" CHECK ("method" = 'demo');
