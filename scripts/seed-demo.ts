@@ -9,6 +9,7 @@ import { inviteMember } from "../services/auth";
 import { ticketQrPayload } from "../domain/ticket";
 
 const DEMO_TICKET_ID = "GF-7K2M-9Q4X-3B8N-6T1V-5W0Z";
+const VALID_DEMO_TICKET_ID = "GF-4Y7R-2C9P-8M3K-6X1T-0Z5V";
 const TZ = "America/New_York";
 
 function guard(): string {
@@ -264,10 +265,17 @@ async function main() {
     { lineId: generalLine.id, names: ["Ari Voss", "Tess Alvi"] },
   ]);
   const firstTicket = ari.tickets[0];
+  const secondTicket = ari.tickets[1];
   await prisma.issuedTicket.update({
     where: { publicId: firstTicket.publicId },
     data: { publicId: DEMO_TICKET_ID },
   });
+  if (secondTicket) {
+    await prisma.issuedTicket.update({
+      where: { publicId: secondTicket.publicId },
+      data: { publicId: VALID_DEMO_TICKET_ID },
+    });
+  }
   await verifyTicket({
     payload: ticketQrPayload(DEMO_TICKET_ID),
     staffUserId: staff.id,
@@ -351,7 +359,8 @@ async function main() {
   console.log("");
   console.log("Demo data");
   console.log(`  organizer      Fold & Field /organizer`);
-  console.log(`  stable ticket  /ticket/${DEMO_TICKET_ID}`);
+  console.log(`  checked-in ticket /ticket/${DEMO_TICKET_ID}`);
+  console.log(`  valid ticket      /ticket/${VALID_DEMO_TICKET_ID}`);
   console.log(`  live hold      /checkout/${pendingHold.ref}`);
   console.log(`  cancelled      /reservation/${cancelled.ref}`);
   console.log(`  cancelled event reservation /reservation/${(await requireReservationByRef(swapHold.ref)).ref}`);
