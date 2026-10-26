@@ -21,11 +21,20 @@ export const metadata: Metadata = {
     description:
       "Event publishing, honest inventory, issued tickets, and a check-in desk that holds up under pressure.",
     url: env.siteUrl,
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "Gatefold event operations",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "Gatefold - independent event operations",
     description: "Publishing, inventory, tickets, and check-in for independent organizers.",
+    images: ["/og.png"],
   },
   robots: { index: true, follow: true },
 };
