@@ -26,7 +26,15 @@ export default defineConfig({
     baseURL: "http://localhost:3100",
     trace: "on-first-retry",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "chromium",
+      use: {
+        ...devices["Desktop Chrome"],
+        ...(process.env.CI ? { channel: "chrome" } : {}),
+      },
+    },
+  ],
   webServer: {
     command: "npx next start -p 3100",
     url: "http://localhost:3100",
