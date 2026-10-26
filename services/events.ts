@@ -1,22 +1,12 @@
 import { randomUUID } from "node:crypto";
-import { prisma } from "@/lib/db";
+import { prisma, TX_OPTIONS } from "@/lib/db";
 import { HttpError } from "@/lib/errors";
 import { parseLocalDateTime } from "@/lib/dates";
-import { slugify } from "@/lib/ids";
+import { randomBase32, slugify } from "@/lib/ids";
 import { publishBlockers, unpublishBlocker } from "@/domain/event";
 import type { EventCreateInput } from "@/validation/schemas";
 import { releaseHeld, releaseSold } from "@/repositories/inventory";
 import { recordAudit } from "./audit";
-
-export async function uniqueEventSlug(base: string): Promise<string> {
-  const root = slugify(base) || "event";
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    const candidate = attempt === 0 ? root : `${root}-${Math.random().toString(36).slice(2, 6)}`;
-    const existing = await prisma.event.findUnique({ where: { slug: candidate }, select: { id: true } });
-    if (!existing) return candidate;
-  }
-  return `${root}-${randomUUID().slice(0, 8)}`;
-}
 
 export async function uniqueOrganizerSlug(base: string): Promise<string> {
   const root = slugify(base) || "organizer";
@@ -52,12 +42,10 @@ export async function createEvent(input: EventCreateInput, organizerId: string, 
         accessibility: input.accessibility ?? "",
       },
     });
-    const base = slugify(input.title);
-    let slug = base || "event";
-    for (let attempt = 1; attempt < 20; attempt += 1) {
-      const existing = await tx.event.findUnique({ where: { slug }, select: { id: true } });
-      if (!existing) break;
-      slug = `${base}-${Math.random().toString(36).slice(2, 6)}`;
+    const base = slugify(input.title) || "event";
+    let slug = base;
+    if (await tx.event.findUnique({ where: { slug }, select: { id: true } })) {
+      slug = `${base}-${randomBase32(5).toLowerCase()}`;
     }
     const event = await tx.event.create({
       data: {
@@ -283,7 +271,7 @@ export async function cancelEvent(
       });
       return "cancelled";
     },
-    { timeout: 40_000 }
+    { ...TX_OPTIONS, timeout: 40_000 }
   );
   if (outcome === "missing") throw new HttpError("NOT_FOUND", "Event not found.", 404);
 }
@@ -425,6 +413,37 @@ export async function setTicketTypeStatus(input: {
       organizerId: input.organizerId,
       actorUserId: input.actorUserId,
       action: input.status === "ARCHIVED" ? "ticket_type.archived" : "ticket_type.reactivated",
+      targetType: "ticket_type",
+      targetId: type.id,
+    });
+  });
+}
+
+export async function setTicketTypeVisibility(input: {
+  ticketTypeId: string;
+  organizerId: string;
+  actorUserId: string;
+  visibility: "PUBLIC" | "HIDDEN";
+}) {
+  const type = await prisma.ticketType.findUnique({
+    where: { id: input.ticketTypeId },
+    include: { event: true },
+  });
+  if (!type || type.event.organizerId !== input.organizerId) {
+    throw new HttpError("NOT_FOUND", "Ticket type not found.", 404);
+  }
+  await prisma.$transaction(async (tx) => {
+    await tx.ticketType.update({
+      where: { id: type.id },
+      data: { visibility: input.visibility },
+    });
+    await recordAudit(tx, {
+      organizerId: input.organizerId,
+      actorUserId: input.actorUserId,
+      action:
+        input.visibility === "HIDDEN"
+          ? "ticket_type.hidden"
+          : "ticket_type.shown",
       targetType: "ticket_type",
       targetId: type.id,
     });

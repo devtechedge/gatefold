@@ -2,7 +2,7 @@ import { withApi, jsonOk, readJson, assertSameOrigin } from "@/lib/http";
 import { requireApiUser, eventAccess } from "@/lib/auth/organizer";
 import { HttpError } from "@/lib/errors";
 import { eventForOrganizer } from "@/repositories/events";
-import { addTicketType, setTicketTypeStatus, updateCapacity } from "@/services/events";
+import { addTicketType, setTicketTypeStatus, setTicketTypeVisibility, updateCapacity } from "@/services/events";
 import { ticketTypeCreateSchema } from "@/validation/schemas";
 
 export const dynamic = "force-dynamic";
@@ -61,6 +61,17 @@ export const POST = withApi<{ params: Promise<{ id: string }> }>(async (request,
       organizerId: access.event.organizerId,
       actorUserId: user.id,
       capacity: Number(body.capacity),
+    });
+    return jsonOk({ data: { ok: true } });
+  }
+
+  if (action === "visibility") {
+    const visibility = body.visibility === "HIDDEN" ? "HIDDEN" : "PUBLIC";
+    await setTicketTypeVisibility({
+      ticketTypeId: String(body.ticketTypeId ?? ""),
+      organizerId: access.event.organizerId,
+      actorUserId: user.id,
+      visibility,
     });
     return jsonOk({ data: { ok: true } });
   }

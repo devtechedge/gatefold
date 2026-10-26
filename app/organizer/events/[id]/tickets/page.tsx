@@ -11,6 +11,7 @@ import { TicketAddForm } from "@/components/organizer/ticket-add-form";
 import {
   updateCapacityAction,
   setTicketStatusAction,
+  setTicketVisibilityAction,
   updateTicketTypeAction,
 } from "@/app/organizer/actions";
 
@@ -74,6 +75,9 @@ export default async function TicketsPage({ params }: { params: Promise<{ id: st
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="display-m">{type.label}</h2>
                     <span className={`chip ${type.status === "ACTIVE" ? "" : "chip-outline"}`}>{type.status}</span>
+                    <span className={`chip ${type.visibility === "PUBLIC" ? "chip-outline" : "chip-accent"}`}>
+                      {type.visibility === "PUBLIC" ? "Public" : "Hidden"}
+                    </span>
                   </div>
                   <p className="mt-2 text-sm muted">{type.description || "No description."}</p>
                   <p className="mt-2 mono text-sm">
@@ -87,9 +91,20 @@ export default async function TicketsPage({ params }: { params: Promise<{ id: st
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <ActionForm
+                    action={setTicketVisibilityAction}
+                    submitLabel={type.visibility === "PUBLIC" ? "Hide from public" : "Show publicly"}
+                    variant="outline"
+                    buttonClassName="btn-sm"
+                  >
+                    <input type="hidden" name="eventId" value={event.id} />
+                    <input type="hidden" name="ticketTypeId" value={type.id} />
+                    <input type="hidden" name="visibility" value={type.visibility === "PUBLIC" ? "HIDDEN" : "PUBLIC"} />
+                  </ActionForm>
+                  <ActionForm
                     action={setTicketStatusAction}
                     submitLabel={type.status === "ACTIVE" ? "Archive" : "Reactivate"}
                     variant="outline"
+                    buttonClassName="btn-sm"
                   >
                     <input type="hidden" name="eventId" value={event.id} />
                     <input type="hidden" name="ticketTypeId" value={type.id} />

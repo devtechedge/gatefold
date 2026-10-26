@@ -24,6 +24,7 @@ import {
   addTicketType,
   updateTicketType,
   setTicketTypeStatus,
+  setTicketTypeVisibility,
   updateCapacity,
 } from "@/services/events";
 import {
@@ -273,6 +274,31 @@ export async function setTicketStatusAction(
   revalidatePath(`/organizer/events/${eventId}/tickets`);
   revalidatePath(`/events/${access.event.slug}`);
   return { message: status === "ARCHIVED" ? "Ticket type archived." : "Ticket type reactivated." };
+}
+
+export async function setTicketVisibilityAction(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const { user } = await pageContext("ticket:manage");
+  const eventId = text(formData, "eventId");
+  const access = await eventAccess(user.id, eventId, "ticket:manage");
+  const visibility = text(formData, "visibility") === "HIDDEN" ? "HIDDEN" : "PUBLIC";
+  try {
+    await setTicketTypeVisibility({
+      ticketTypeId: text(formData, "ticketTypeId"),
+      organizerId: access.event.organizerId,
+      actorUserId: user.id,
+      visibility,
+    });
+  } catch (error) {
+    return toError(error);
+  }
+  revalidatePath(`/organizer/events/${eventId}/tickets`);
+  revalidatePath(`/events/${access.event.slug}`);
+  return {
+    message: visibility === "HIDDEN" ? "Ticket type hidden from public sale." : "Ticket type visible on the public page.",
+  };
 }
 
 export async function updateCapacityAction(
