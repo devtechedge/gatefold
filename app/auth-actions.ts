@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { clientIp, rateLimit } from "@/lib/auth/rate-limit";
 import { loginSchema, registerSchema } from "@/validation/schemas";
 import { loginUser, registerUser } from "@/services/auth";
+import { sha256 } from "@/lib/ids";
 import { HttpError } from "@/lib/errors";
 import type { AuthState } from "@/lib/auth/state";
 
@@ -25,7 +26,7 @@ export async function loginAction(_state: AuthState, formData: FormData): Promis
   const headerStore = await headers();
   const ip = clientIp(headerStore);
   const ipLimit = await rateLimit(`login:ip:${ip}`, 40, 900);
-  const emailLimit = await rateLimit(`login:email:${parsed.data.email}`, 10, 900);
+  const emailLimit = await rateLimit(`login:email:${sha256(parsed.data.email).slice(0, 32)}`, 10, 900);
   if (!ipLimit.allowed || !emailLimit.allowed) {
     return { error: "Too many sign-in attempts. Wait a few minutes and try again." };
   }

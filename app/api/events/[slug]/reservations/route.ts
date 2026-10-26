@@ -4,6 +4,7 @@ import { HttpError } from "@/lib/errors";
 import { prisma } from "@/lib/db";
 import { reservationCreateSchema } from "@/validation/schemas";
 import { createHold } from "@/services/reservations";
+import { sha256 } from "@/lib/ids";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +26,7 @@ export const POST = withApi<{ params: Promise<{ slug: string }> }>(async (reques
   if (input.eventId !== event.id) {
     throw new HttpError("VALIDATION_ERROR", "The event does not match the request path.", 400);
   }
-  const emailLimit = await rateLimit(`reserve:email:${input.buyer.email}`, 8, 3600);
+  const emailLimit = await rateLimit(`reserve:email:${sha256(input.buyer.email).slice(0, 32)}`, 8, 3600);
   if (!emailLimit.allowed) {
     throw new HttpError("RATE_LIMITED", "That email has created several holds recently. Try again later.", 429);
   }
