@@ -17,8 +17,9 @@ https://gatefold-app-seven.vercel.app
 | Discovery | Event operations |
 | --- | --- |
 | ![Event discovery](docs/screenshots/01-home.png) | ![Organizer dashboard](docs/screenshots/05-organizer.png) |
-| ![Event catalogue](docs/screenshots/02-events.png) | ![Event detail](docs/screenshots/03-event-detail.png) |
-| ![Issued ticket](docs/screenshots/04-ticket.png) | ![Mobile check-in](docs/screenshots/06-check-in.png) |
+| ![Event detail](docs/screenshots/03-event-detail.png) | ![Issued ticket](docs/screenshots/04-ticket.png) |
+
+![Mobile check-in](docs/screenshots/06-check-in.png)
 
 ## What it does
 
