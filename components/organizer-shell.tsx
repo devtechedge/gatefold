@@ -60,7 +60,7 @@ export function OrganizerShell({
               );
             })}
             {organizerSlug ? (
-              <Link href={`/events`} className="org-nav-link shrink-0 whitespace-nowrap">
+              <Link href={`/events`} className="org-nav-link hidden shrink-0 whitespace-nowrap lg:flex">
                 Public programme
               </Link>
             ) : null}
