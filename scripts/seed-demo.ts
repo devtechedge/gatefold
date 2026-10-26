@@ -14,7 +14,7 @@ const TZ = "America/New_York";
 function guard(): string {
   const url = process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL ?? "";
   const database = new URL(url).pathname.replace(/^\//, "");
-  if (!["gatefold", "gatefold_test"].includes(database)) {
+  if (!["gatefold", "gatefold_test", "gatefold_e2e"].includes(database)) {
     throw new Error(`Refusing to seed unrecognised database "${database}".`);
   }
   if (database === "gatefold" && process.env.ALLOW_PROD_SEED !== "1") {
@@ -32,7 +32,15 @@ async function main() {
   const database = guard();
   console.log(`Seeding ${database} with the Gatefold demo.`);
 
-  await prisma.organizer.deleteMany({ where: { slug: "fold-and-field" } });
+  const previous = await prisma.organizer.findUnique({ where: { slug: "fold-and-field" } });
+  if (previous) {
+    // Reservation history is deliberately restrictive, so remove it before its events.
+    await prisma.reservation.deleteMany({ where: { organizerId: previous.id } });
+    await prisma.event.deleteMany({ where: { organizerId: previous.id } });
+    await prisma.organizer.delete({ where: { id: previous.id } });
+  }
+  await prisma.rateLimit.deleteMany({});
+  await prisma.idempotencyRecord.deleteMany({});
   await prisma.user.deleteMany({
     where: {
       email: {
