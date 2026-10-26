@@ -21,6 +21,8 @@ test("health is minimal, headers are present, and protected surfaces are gated",
   expect(headers["cross-origin-opener-policy"]).toBe("same-origin");
   expect(headers["cross-origin-resource-policy"]).toBe("same-origin");
   expect(headers["x-dns-prefetch-control"]).toBe("off");
+  expect(headers["content-security-policy"]).toContain("default-src 'self'");
+  expect(headers["content-security-policy"]).toContain("frame-ancestors 'none'");
 
   const guarded = await request.get("/organizer", { maxRedirects: 0 });
   expect([302, 307]).toContain(guarded.status());
